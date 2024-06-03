@@ -13,7 +13,7 @@ zf: db ' ZF -> '
 sf: db ' SF -> '
 tf: db ' TF -> '
 if: db ' IF -> '
-df: db ' SF -> '
+df: db ' DF -> '
 of: db ' OF -> '
 nt: db ' NT -> '
 flagMsg_len equ $-nt
