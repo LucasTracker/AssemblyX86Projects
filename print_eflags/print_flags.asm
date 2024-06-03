@@ -6,17 +6,24 @@ section .rodata
 msg: db 'LAHF/SAHF available in 64-bit mode?-> '
 msg_len equ $-msg
 
-cf: db ' CF -> '
-pf: db ' PF -> '
-af: db ' AF -> '
-zf: db ' ZF -> '
-sf: db ' SF -> '
-tf: db ' TF -> '
-if: db ' IF -> '
-df: db ' DF -> '
-of: db ' OF -> '
-nt: db ' NT -> '
-flagMsg_len equ $-nt
+cf: db 	 ' CF   -> '
+pf: db 	 ' PF   -> '
+af: db 	 ' AF   -> '
+zf: db 	 ' ZF   -> '
+sf: db 	 ' SF   -> '
+tf: db 	 ' TF   -> '
+if: db 	 ' IF   -> '
+df: db 	 ' DF   -> '
+of: db 	 ' OF   -> '
+iopl: db ' IOPL -> '
+flagMsg_len equ $-iopl
+nt: db 	 ' NT   -> '
+rf: db 	 ' RF   -> '
+vm: db 	 ' VM   -> '
+ac: db 	 ' AC   -> '
+vif: db  ' VIF  -> '
+vip: db  ' VIP  -> '
+id: db 	 ' ID   -> '
 
 rflags_tag:
 	db '**************** RFLAGS ****************', 0xa
@@ -51,14 +58,21 @@ section .text
 %define DF_POSITION 10
 %define OF_POSITION 11
 %define IOPL_POSITION 12 ; 12-13
+%define IOPL_POSITION2 13 ; 12-13
 %define NT_POSITION 14
+%define RF_POSITION 16
+%define VM_POSITION 17
+%define AC_POSITION 18
+%define VIF_POSITION 19
+%define VIP_POSITION 20
+%define ID_POSITION 21
 
-%macro load_flag 1
+%macro load_flag 2
 	mov ah,bh
 	sar al, %1
 	and al, 1
 	add al, 0x30
-	mov ah, 0xa	; Load the newline character into ah
+	mov ah, %2	; Load the newline character into ah (or not)
 	mov [rsp - 4], eax
 	lea rsi, [rsp - 4]
 %endmacro
@@ -72,7 +86,7 @@ _start:
 	cpuid
 	and ecx, 0x1
 	lea rsi, [msg]
-
+	
 	push rcx
 	mov rsi, [yesorno + rcx*8]
 	write_msg 4	
@@ -89,66 +103,111 @@ _start:
 
 	lahf		; Load the (r)eflags into AH register
 	mov bh,ah
-	load_flag CF_POSITION
+	load_flag CF_POSITION, 0xa
 	write_msg 4		
 
 
 	lea rsi,[pf]	; Parity Flag
 	write_msg flagMsg_len
 
-	load_flag PF_POSITION 
+	load_flag PF_POSITION, 0xa 
 	write_msg 4
 
 	lea rsi, [af]	; Auxiliary Flag
 	write_msg flagMsg_len
 
-	load_flag AF_POSITION
+	load_flag AF_POSITION, 0xa
 	write_msg 4
 
 	lea rsi, [zf]	; Zero Flag
 	write_msg flagMsg_len
 
-	load_flag ZF_POSITION
+	load_flag ZF_POSITION, 0xa
 	write_msg 4
 
 	lea rsi, [sf]	; Sign Flag
 	write_msg flagMsg_len
 
-	load_flag SF_POSITION
+	load_flag SF_POSITION, 0xa
 	write_msg 4
 
 	lea rsi, [tf]	; Trap Flag
 	write_msg flagMsg_len
 
-	load_flag TF_POSITION
+	load_flag TF_POSITION, 0xa
 	write_msg 4
 
 	lea rsi, [if]	; Interrupt Enable Flag
 	write_msg flagMsg_len
 
-	load_flag IF_POSITION
+	load_flag IF_POSITION, 0xa
 	write_msg 4
 
 	lea rsi, [df]	; Direction Flag
 	write_msg flagMsg_len
 
-	load_flag DF_POSITION
+	load_flag DF_POSITION, 0xa
 	write_msg 4
 
 	lea rsi, [of]	; Overflow Flag
 	write_msg flagMsg_len
 
-	load_flag OF_POSITION
+	load_flag OF_POSITION, 0xa
 	write_msg 4
 
 	;TODO -> Implement the function write_msg to flag IOPL here.
 
+	lea rsi, [iopl]
+	write_msg flagMsg_len
+	
+	load_flag IOPL_POSITION2, 0x00
+	write_msg 4
+
+	load_flag IOPL_POSITION, 0xa
+	write_msg 4
+
 	lea rsi, [nt]	; Nested Task Flag
 	write_msg flagMsg_len
 
-	load_flag NT_POSITION
+	load_flag NT_POSITION, 0xa
 	write_msg 4
 
+
+	lea rsi, [rf]	; Resume Flag
+	write_msg flagMsg_len
+
+	load_flag RF_POSITION, 0xa
+	write_msg 4
+
+	lea rsi, [vm]	; Virtual-8086 Mode Flag
+	write_msg flagMsg_len
+
+	load_flag VM_POSITION, 0xa
+	write_msg 4
+
+	lea rsi, [ac]	; Alignment Check/ Access Control Flag
+	write_msg flagMsg_len
+
+	load_flag AC_POSITION, 0xa
+	write_msg 4
+
+	lea rsi, [vif]	; Virtual Interrupt Flag
+	write_msg flagMsg_len
+
+	load_flag VIF_POSITION, 0xa
+	write_msg 4
+
+	lea rsi, [vip]	; Virtual Interrupt Pending Flag
+	write_msg flagMsg_len
+
+	load_flag VIP_POSITION, 0xa
+	write_msg 4
+
+	lea rsi, [id]	; ID Flag
+	write_msg flagMsg_len
+
+	load_flag ID_POSITION, 0xa
+	write_msg 4
 
 .exit:
 	pop rbx
